@@ -1,3 +1,4 @@
+pasta = "asdasdad" #aqui inserir o path
 def text_reader(texto):
     grafo = [] #lista que especifica o grafo
     aux = [] # Variável auxiliar, vai ajudar a construir a lista contendo as arestas e informações sobre o grafo
@@ -53,4 +54,4 @@ def faz_tudo(texto):
     for i in range(len(matriz_final)):
         print(str(matriz_final[i])+"\n")
     return matriz_final
-(faz_tudo(open(r'C:\Users\Gio Faletti\Documents\GioPosEscola\IC\grafo.txt')))
+(faz_tudo(open(pasta)))
