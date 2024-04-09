@@ -43,4 +43,3 @@ def faz_tudo(texto):
 #    for i in range(len(matriz_final)):
 #     print(str(matriz_final[i])+"\n")
     return matriz_final
-grafo = (faz_tudo(open(r'C:\Users\Gio Faletti\Documents\GioPosEscola\ic\codigos\ProgVS\grafo.txt')))
