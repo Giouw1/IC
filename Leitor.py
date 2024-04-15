@@ -42,4 +42,9 @@ def faz_tudo(texto):
     matriz_final = matriz_adj(texto_lido)
 #    for i in range(len(matriz_final)):
 #     print(str(matriz_final[i])+"\n")
-    return matriz_final
+    nedge = 0
+    for i in range(len(matriz_final)-1):
+        for j in range(i+1, len(matriz_final)):
+            if matriz_final[i][j] == 1:
+                nedge += 1
+    return matriz_final, nedge
