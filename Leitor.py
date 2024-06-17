@@ -40,11 +40,22 @@ def text_reader(texto):
 def faz_tudo(texto):
     texto_lido = text_reader(texto)
     matriz_final = matriz_adj(texto_lido)
-#    for i in range(len(matriz_final)):
-#     print(str(matriz_final[i])+"\n")
     nedge = 0
-    for i in range(len(matriz_final)-1):
-        for j in range(i+1, len(matriz_final)):
+    for i in range(len(matriz_final)-1): # só precisa ver até o vértice nvert-1, óbvio
+        for j in range(i+1, len(matriz_final[i])):
             if matriz_final[i][j] == 1:
                 nedge += 1
-    return matriz_final, nedge
+    nvert = len(matriz_final)
+    e = 0
+    #id edge simplesmente enumera as arestas existentes
+    #lista de arestas arest
+    arest = []
+    id_edge = [[-1 for j in range(nvert)] for i in range(nvert)]
+    for i in range(nvert-1):        
+        for j in range(i+1, len(matriz_final[i])):
+            if matriz_final[i][j] == 1:
+                id_edge[i][j] = id_edge[j][i] = e
+                e += 1
+                arest+=[(i,j)]
+                    
+    return matriz_final, nedge, nvert, id_edge, arest
