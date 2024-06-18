@@ -89,16 +89,16 @@ def setupproblem(grafo, nedge, nvert, id_edge, arest):
     #Formulação MTZ:
     nedge_dir = (nedge + nvert)*2
     #Aqui vou formar o nome das variáveis a: Para facilitar a visualização, os nomes vao ser a uniao das listas a seguir
-    names_1= ['a_%d_%d'% (-1,i) for i in range(nvert)]
-    names_2= ['a_%d_%d'% (i,nvert) for i in range(nvert)]
-    names_3= ['a_%d_%d'% (i,j)  for i in range(nvert-1) for j in range(i+1,len(grafo[i])) if grafo[i][j] == 1 ]
-    names_4=['a_%d_%d'% (j,i)  for i in range(nvert-1) for j in range(i+1,len(grafo[i])) if grafo[i][j] == 1]
-    print(len(names_1+names_2+names_3+names_4) == nedge_dir)
+    #names_1= ['a_%d_%d'% (-1,i) for i in range(nvert)]
+    #names_2= ['a_%d_%d'% (i,nvert) for i in range(nvert)]
+    #names_3= ['a_%d_%d'% (i,j)  for i in range(nvert-1) for j in range(i+1,len(grafo[i])) if grafo[i][j] == 1 ]
+    #names_4=['a_%d_%d'% (j,i)  for i in range(nvert-1) for j in range(i+1,len(grafo[i])) if grafo[i][j] == 1]
+    
 
     a = [cpx.variables.add(obj=[0] * nedge_dir,
                              lb=[0] *nedge_dir, ub=[1] * nedge_dir,
                              types=['B'] * nedge_dir,
-                             names=[['a_%d_%d_%d'% (k,-1,i) for i in range(nvert)] + ['a_%d_%d_%d'% (k,i,nvert) for i in range(nvert)] +['a_%d_%d_%d'% (k,i,j)  for i in range(nvert-1) for j in range(i+1,len(grafo[i])) if grafo[i][j] == 1 ] + ['a_%d_%d_%d'% (k,j,i)  for i in range(nvert-1) for j in range(i+1,len(grafo[i])) if grafo[i][j] == 1]]) for k in range(1,lim_cam+1)]
+                             names=['a_%d_%d_%d'% (k,-1,i) for i in range(nvert)] + ['a_%d_%d_%d'% (k,i,nvert) for i in range(nvert)] +['a_%d_%d_%d'% (k,i,j)  for i in range(nvert-1) for j in range(i+1,len(grafo[i])) if grafo[i][j] == 1 ] + ['a_%d_%d_%d'% (k,j,i)  for i in range(nvert-1) for j in range(i+1,len(grafo[i])) if grafo[i][j] == 1]) for k in range(1,lim_cam+1)]
  #Lembrar que vai ter uma aresta inicial e uma final, para o direcionamento do grafo
     u = [cpx.variables.add(obj=[0] * nvert,
                              lb=[0] *nvert, ub=[nvert-1] * nvert,
