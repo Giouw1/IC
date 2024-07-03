@@ -1,23 +1,10 @@
 def matriz_adj(texto_lido):
     matriz_f = []
     for k in range(texto_lido[0][0]):#quantidade de vertices
-        matriz_f += [[]]
-        #se for maior, do que o o tamanho atual, enche de 0`s ate o valor em questao e preenche o bloco, se nao, so preenche o bloco com `1`
+        matriz_f += [[0]*texto_lido[0][0]]
     for i in range(1,len(texto_lido)):
-        maior = 0
-        for j in range(1,len(texto_lido)):
-            if texto_lido[j][0] == i:
-                if texto_lido[j][1]>=maior:
-                    for k in range(texto_lido[j][1]-maior):
-                        matriz_f[i-1]+=[0]
-                    maior = texto_lido[j][1]
-                matriz_f[i-1][texto_lido[j][1]-1] = 1
-            elif texto_lido[j][1] == i:
-                if texto_lido[j][0]>=maior:
-                    for n in range(texto_lido[j][0]-maior):
-                        matriz_f[i-1]+=[0]
-                    maior = texto_lido[j][0]
-                matriz_f[i-1][texto_lido[j][0]-1] = 1
+        matriz_f[texto_lido[i][0]-1][texto_lido[i][1]-1] = 1
+        matriz_f[texto_lido[i][1]-1][texto_lido[i][0]-1] = 1
     return matriz_f
 def text_reader(texto):
     auxiliar = []
@@ -59,3 +46,8 @@ def faz_tudo(texto):
                 arest+=[(i,j)]
                     
     return matriz_final, nedge, nvert, id_edge, arest
+#Formato do grafo tem que ser:
+path = str(input("Insira o grafo"))
+
+matriz_final, nedge, nvert, id_edge, arest = faz_tudo(open(path))
+
