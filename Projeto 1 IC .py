@@ -3,6 +3,7 @@ from Leitor import faz_tudo
 
 def setupproblem(grafo, nedge, nvert, id_edge, arest):
     cpx = cplex.Cplex()
+
     #id_edge ordena as arestas, se id_edge[a][b] é 5, a aresta ab é a quinta
     lim_cam = 19*nvert
     numedge_sep = ((nedge*(nedge-1))//2)#Quantidade total de arestas que satisfaz f>e
@@ -85,40 +86,108 @@ def setupproblem(grafo, nedge, nvert, id_edge, arest):
         for k in range(lim_cam)],
         senses = ['G']*lim_cam,
         rhs=[1]*lim_cam)
-    sum = 0
+
+
+
     #Formulação MTZ:
+    nedgesout_per_vert = [] # Todas as arestas que saem
+    for i in range(len(grafo)):
+        counter = 0
+        for j in range(i,len(grafo[i])):
+            if grafo[i][j] == 1:counter +=1
+        nedgesout_per_vert += [counter]
+    nedgesin_per_vert = [] # Quantas arestas "entram" para cada vértice (tem o vértice do lado "direto")
+    for i in range(len(grafo)):
+        counter = 0
+        for j in range(0,i):
+            if grafo[i][j] == 1:counter +=1
+        nedgesin_per_vert += [counter]
     nedge_dir = (nedge + nvert)*2
     #Aqui vou formar o nome das variáveis a: Para facilitar a visualização, os nomes vao ser a uniao das listas a seguir
-    #names_1= ['a_%d_%d'% (-1,i) for i in range(nvert)]
-    #names_2= ['a_%d_%d'% (i,nvert) for i in range(nvert)]
-    #names_3= ['a_%d_%d'% (i,j)  for i in range(nvert-1) for j in range(i+1,len(grafo[i])) if grafo[i][j] == 1 ]
-    #names_4=['a_%d_%d'% (j,i)  for i in range(nvert-1) for j in range(i+1,len(grafo[i])) if grafo[i][j] == 1]
-    
-
+    names_1= ['a_%d_%d'% (-1,i) for i in range(nvert)]
+    names_2= ['a_%d_%d'% (i,nvert) for i in range(nvert)]
+    names_3= ['a_%d_%d'% (i,j)  for i in range(nvert-1) for j in range(i+1,len(grafo[i])) if grafo[i][j] == 1 ]
+    names_4= ['a_%d_%d'% (j,i)  for i in range(nvert-1) for j in range(i+1,len(grafo[i])) if grafo[i][j] == 1]
     a = [cpx.variables.add(obj=[0] * nedge_dir,
                              lb=[0] *nedge_dir, ub=[1] * nedge_dir,
                              types=['B'] * nedge_dir,
-                             names=['a_%d_%d_%d'% (k,-1,i) for i in range(nvert)] + ['a_%d_%d_%d'% (k,i,nvert) for i in range(nvert)] +['a_%d_%d_%d'% (k,i,j)  for i in range(nvert-1) for j in range(i+1,len(grafo[i])) if grafo[i][j] == 1 ] + ['a_%d_%d_%d'% (k,j,i)  for i in range(nvert-1) for j in range(i+1,len(grafo[i])) if grafo[i][j] == 1]) for k in range(1,lim_cam+1)]
+                             names=['a_%d_-1_%d'% (k,i) for i in range(nvert)] + ['a_%d_%d_%d'% (k,i,nvert) for i in range(nvert)] +['a_%d_%d_%d'% (k,i,j)  for i in range(nvert-1) for j in range(i+1,len(grafo[i])) if grafo[i][j] == 1 ] + ['a_%d_%d_%d'% (k,j,i)  for i in range(nvert-1) for j in range(i+1,len(grafo[i])) if grafo[i][j] == 1]) for k in range(1,lim_cam+1)]
  #Lembrar que vai ter uma aresta inicial e uma final, para o direcionamento do grafo
     u = [cpx.variables.add(obj=[0] * nvert,
                              lb=[0] *nvert, ub=[nvert-1] * nvert,
                              names=['u_%d_%d' % (k,i)  for i in range(nvert)]) for k in range(1,lim_cam+1)]
     #Restrição 8
+    #a é organizado em todos de -1 até vert (nvert), todos vert até nvert+1(nvert), ordem de arestas normal e ao contrário.
+    #Aqui é uma aresta de ida e a correspondente de volta
     cpx.linear_constraints.add(
 
-        lin_expr = [cplex.SparsePair([], [1,1,-1])
-        for k in range(lim_cam) ],
+        lin_expr = [cplex.SparsePair([a[k][i+2*nvert]] + [a[k][i+2*nvert+nedge]] + [x[k][i]], [1,1,-1])
+        for k in range(lim_cam)  for i in range(nedge) ],
         senses = ['E']*nedge*lim_cam,
         rhs=[0]*nedge*lim_cam)
 
-    
+    #Restrição 9
+    cpx.linear_constraints.add(
+    #É para eu pegar todas as arestas que tenham o vértice como chegada? Ou é para pegar todos as arestas do sentido contrário que tenham
+    #O vértice como chegada? o ji é sempre em relação À ordem contrária? perguntar. Dúvidas nesse bloco.
+    #Se estiver errado, todas as restrições com ji devem ser mexidas. no caso atual, são 2 blocos de lista para formar o ji
+    #Ver, também, se o N é nvert
+        lin_expr = [cplex.SparsePair([a[k][i]] + [a[k][id_edge[i][j]+2*nvert+nedge]for j in range(i,len(grafo[i])) if id_edge[i][j] != -1] + [a[k][id_edge[j][i]+2*nvert] for j in range(i) if id_edge[j][i] != -1] + [u[k][i]], [1]+[2]*nedgesout_per_vert[i] + [2]*nedgesin_per_vert[i] + [-1])
+        for k in range(lim_cam)  for i in range(nvert)],
+        senses = ['L']*nvert*lim_cam,
+        rhs=[0]*nvert*lim_cam)
+    #Restrição 10
+    cpx.linear_constraints.add(
+        #Nenhum comentário expressivo para essa restrição
+        lin_expr = [cplex.SparsePair([u[k][i]]+ [p[k]] + [a[k][i]] , [1,-(nvert-1),nvert-2])
+        for k in range(lim_cam) for i in range(nvert)],
+        senses = ['L']*lim_cam*nvert,
+        rhs=[0]*lim_cam*nvert)
+    #Restrição 11
+    cpx.linear_constraints.add(
+
+       lin_expr = [cplex.SparsePair([a[k][id_edge[i][j]+2*nvert+nedge]for j in range(i,len(grafo[i])) if id_edge[i][j] != -1] + [a[k][id_edge[j][i]+2*nvert] for j in range(i) if id_edge[j][i] != -1] + [a[k][id_edge[i][j]+2*nvert] for j in range(i,len(grafo[i])) if id_edge[i][j] != -1] + [a[k][id_edge[j][i]+2*nvert+nedge] for j in range(i) if id_edge[j][i] != -1], [1]*(nedgesout_per_vert[i]+nedgesin_per_vert[i])+ [-1]*(nedgesout_per_vert[i]+nedgesin_per_vert[i]))
+       for k in range(lim_cam) for i in range(nvert)  ],
+       senses = ['E']*lim_cam*nvert,
+       rhs=[0]*lim_cam*nvert)
+    #Restrição 12
+    cpx.linear_constraints.add(
+
+       lin_expr = [cplex.SparsePair([a[k][id_edge[i][j]+2*nvert+nedge]for j in range(i,len(grafo[i])) if id_edge[i][j] != -1] + [a[k][id_edge[j][i]+2*nvert] for j in range(i) if id_edge[j][i] != -1]+ [p[k]], [1]*nedgesout_per_vert[i] + [1]*nedgesin_per_vert[i] + [-1])
+       for k in range(lim_cam) for i in range(nvert)],
+       senses = ['L']*lim_cam*nvert,
+       rhs=[0]*lim_cam*nvert)
+    #Restrição 13
+    cpx.linear_constraints.add(
+
+       lin_expr = [cplex.SparsePair([a[k][i] for i in range(nvert)]+[p[k]], [1]*nvert+[-1])
+       for k in range(lim_cam)],
+       senses = ['E']*lim_cam,
+       rhs=[0]*lim_cam)
+    #Restrição 14
+    cpx.linear_constraints.add(
+
+       lin_expr = [cplex.SparsePair([a[k][i+nvert] for i in range(nvert)]+[p[k]], [1]*nvert+[-1])
+       for k in range(lim_cam)],
+       senses = ['E']*lim_cam,
+       rhs=[0]*lim_cam)
+    #Restrição 15
+
+    cpx.linear_constraints.add(
+
+       lin_expr = [cplex.SparsePair([u[k][i]] + [u[k][j]] + [p[k]]+ [a[k][2*nvert +id_edge[i][j]]]+ [a[k][2*nvert+nedge+id_edge[i][j]]], [-1]+[1]+[2-nvert]+[nvert-3]+[nvert-1])
+       for k in range(lim_cam) for i in range(nvert) for j in range(i,nvert) if id_edge[i][j] != -1],
+       senses = ['L']*lim_cam*nedge,
+       rhs=[0]*lim_cam*nedge)
+       
     cpx.write('model.lp')  # Escreve o modelo em um arquivo LP
+    #Blueprint
 #    cpx.linear_constraints.add(
- #   O LADO ESQUERDO    lin_expr=[cplex.SparsePair()
-  #                for i in range(vertices)],
-   #    G, L, E, R(anged) senses=[] * vertices,
-    #  DIREITA  rhs=[0.0] * vertices)
 
-
-matriz_final, nedge, nvert, id_edge, ef_aux = faz_tudo(open(r'C:/Users/Gio Faletti\Documents\GioPosEscola\ic\codigos\ProgVS\grafo.txt'))
+#       lin_expr = [cplex.SparsePair([], [])
+#       for k in range(lim_cam)  ],
+#       senses = ['']*lim_cam,
+#       rhs=[]*lim_cam)
+path = str(input("Insira o caminho do grafo"))
+matriz_final, nedge, nvert, id_edge, ef_aux = faz_tudo(open(path))
 setupproblem(matriz_final, nedge, nvert,id_edge,ef_aux)
