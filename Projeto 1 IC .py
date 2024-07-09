@@ -179,8 +179,37 @@ def setupproblem(grafo, nedge, nvert, id_edge, arest):
        for k in range(lim_cam) for i in range(nvert) for j in range(i,nvert) if id_edge[i][j] != -1],
        senses = ['L']*lim_cam*nedge,
        rhs=[0]*lim_cam*nedge)
-       
+    
+    cpx.objective.set_sense(cpx.objective.sense.minimize)
+    
     cpx.write('model.lp')  # Escreve o modelo em um arquivo LP
+
+    #cpx.parameters.mip.strategy.heuristicfreq.set(-1)
+    #cpx.parameters.mip.cuts.mircut.set(-1)
+    #cpx.parameters.mip.cuts.implied.set(-1)
+    #cpx.parameters.mip.cuts.gomory.set(-1)
+    #cpx.parameters.mip.cuts.flowcovers.set(-1)
+    #cpx.parameters.mip.cuts.pathcut.set(-1)
+    #cpx.parameters.mip.cuts.liftproj.set(-1)
+    #cpx.parameters.mip.cuts.zerohalfcut.set(-1)
+    #cpx.parameters.mip.cuts.cliques.set(-1)
+    #cpx.parameters.mip.cuts.covers.set(-1)
+    cpx.parameters.threads.set(1)
+    cpx.parameters.clocktype.set(1)
+    cpx.parameters.timelimit.set(1800)
+    
+    cpx.solve()
+
+    print('Solution status:                   %d' % cpx.solution.get_status())
+    print('Nodes processed:                   %d' %
+          cpx.solution.progress.get_num_nodes_processed())
+    tol = cpx.parameters.mip.tolerances.integrality.get()
+    print('Optimal value:                     %f' %
+          cpx.solution.get_objective_value())
+    #values = cpx.solution.get_values()
+    #for x in y:
+    #	if values[y[x]] >= 1 - tol:
+    #		print("y_"+str(x)+"= "+str(values[y[x]]))
     #Blueprint
 #    cpx.linear_constraints.add(
 
