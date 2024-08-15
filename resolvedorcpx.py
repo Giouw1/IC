@@ -179,6 +179,13 @@ def setupproblem(grafo, nedge, nvert, id_edge, arest,tipo_grafo):
 
     cpx.write('model.lp')  # Escreve o modelo em um arquivo LP
 
+    # Algoritmo Sequencial
+    cpx.parameters.threads.set(1)
+    #clock type for computation time
+    cpx.parameters.clocktype.set(1) #1 - CPU TIME; 2 - Wall clock
+    #time limit in seconds
+    cpx.parameters.timelimit.set(3600)
+    
     starttime = cpx.get_time()
 
     cpx.solve()
