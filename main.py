@@ -1,5 +1,5 @@
 from Leitor import faz_tudo
-from CPXGRAPHSOLVER import setupproblem
+from resolvedorcpx import setupproblem
 from criadordegrafos import esparso
 from criadordetabela import cria_tabela
 #Preciso ver se os arquivos que estou usando existem e, caso n'ao existam,criar. VER ISSO NO AUTYORAL, DADOS, TABELA
