@@ -14,4 +14,8 @@ def esparso(vertices,arestas):
     formato = list(G.edges())
     formato[0:0] = [(vertices,arestas)]
     return matriz_adj(formato)
-
+def bipartido_completos_desbalanceado(vertices,arestas):
+    G = nx.complete_bipartite_graph(int(vertices//3),vertices-int(vertices//3))
+    formato = list(G.edges())
+    formato[0:0] = [(vertices,arestas)]
+    return matriz_adj(formato)
