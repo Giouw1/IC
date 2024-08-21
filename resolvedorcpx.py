@@ -1,13 +1,21 @@
 
+
 import cplex
 from criadordegrafos import esparso
 from Leitor import faz_tudo
+#Grafo completo: 2n
+# Grafo planar
+#regulares e semiregulares
+#grafo cubico
 
 def setupproblem(grafo, nedge, nvert, id_edge, arest,tipo_grafo):
     cpx = cplex.Cplex()
 
     #id_edge ordena as arestas, se id_edge[a][b] é 5, a aresta ab é a quinta
-    lim_cam = 19*nvert
+    if tipo_grafo == "completo":
+        lim_cam = 2*nvert
+    else:
+        lim_cam = 19*nvert
     numedge_sep = ((nedge*(nedge-1))//2)#Quantidade total de arestas que satisfaz f>e
 
     p = cpx.variables.add(obj=[1] * lim_cam,
@@ -148,49 +156,58 @@ def setupproblem(grafo, nedge, nvert, id_edge, arest,tipo_grafo):
     #Só pode entrar 1 vez no vértice por caminho: Evita ciclos
     cpx.linear_constraints.add(
 
-       lin_expr = [cplex.SparsePair([a[k][id_edge[i][j]+2*nvert+nedge]for j in range(i,len(grafo[i])) if id_edge[i][j] != -1] + [a[k][id_edge[j][i]+2*nvert] for j in range(i) if id_edge[j][i] != -1]+ [p[k]], [1]*nedgesout_per_vert[i] + [1]*nedgesin_per_vert[i] + [-1])
+       lin_expr = [cplex.SparsePair([a[k][i]]+[a[k][id_edge[i][j]+2*nvert+nedge]for j in range(i,len(grafo[i])) if id_edge[i][j] != -1] + [a[k][id_edge[j][i]+2*nvert] for j in range(i) if id_edge[j][i] != -1]+ [p[k]],[1]+ [1]*nedgesout_per_vert[i] + [1]*nedgesin_per_vert[i] + [-1])
        for k in range(lim_cam) for i in range(nvert)],
        senses = ['L']*lim_cam*nvert,
        rhs=[0]*lim_cam*nvert)
     #Só pode ter 1 começo e 1 final.
-    #Restrição 15
+    #Restrição 13
     cpx.linear_constraints.add(
 
        lin_expr = [cplex.SparsePair([a[k][i] for i in range(nvert)]+[p[k]], [1]*nvert+[-1])
        for k in range(lim_cam)],
        senses = ['E']*lim_cam,
        rhs=[0]*lim_cam)
-    #Restrição 16
+    #Restrição 14
     cpx.linear_constraints.add(
 
        lin_expr = [cplex.SparsePair([a[k][i+nvert] for i in range(nvert)]+[p[k]], [1]*nvert+[-1])
        for k in range(lim_cam)],
        senses = ['E']*lim_cam,
        rhs=[0]*lim_cam)
-    #Restrição 17
-
+    #Restrição 15
+#Dúvida nessa última restrição: J pode ser menor que I? parece certo
     cpx.linear_constraints.add(
 
        lin_expr = [cplex.SparsePair([u[k][i]] + [u[k][j]] + [p[k]]+ [a[k][2*nvert +id_edge[i][j]]]+ [a[k][2*nvert+nedge+id_edge[i][j]]], [-1]+[1]+[2-nvert]+[nvert-3]+[nvert-1])
-       for k in range(lim_cam) for i in range(nvert) for j in range(i,nvert) if id_edge[i][j] != -1],
-       senses = ['L']*lim_cam*nedge,
-       rhs=[0]*lim_cam*nedge)
+       for k in range(lim_cam) for i in range(nvert) for j in range(nvert) if id_edge[i][j] != -1],
+       senses = ['L']*lim_cam*nedge*2,
+       rhs=[0]*lim_cam*nedge*2)
     cpx.objective.set_sense(cpx.objective.sense.minimize)
-
-    cpx.write('model.lp')  # Escreve o modelo em um arquivo LP
-
-    # Algoritmo Sequencial
     cpx.parameters.threads.set(1)
     #clock type for computation time
     cpx.parameters.clocktype.set(1) #1 - CPU TIME; 2 - Wall clock
     #time limit in seconds
     cpx.parameters.timelimit.set(3600)
-    
+
+
+
+    cpx.write('model.lp')  # Escreve o modelo em um arquivo LP
+
     starttime = cpx.get_time()
 
     cpx.solve()
 
     endtime = cpx.get_time()
+    variable_names = cpx.variables.get_names()
+    variable_values = cpx.solution.get_values()
+    ver_var = []
+    for var_name, var_value in zip(variable_names, variable_values):
+        if var_value >= 0.9:
+            ver_var+=[f"{var_name} = {var_value}"]
+    with open(r'C:\Users\Gio Faletti\Documents\GioPosEscola\ic\codigos\ProgVS\solucao.txt' , 'w') as f:
+        for i in ver_var:
+            f.write(i+'\n')
 
 
 #ESCREVA O PATH DO SEU DADOS TXT PARA PODER OBTER OS DADOS DO GRAFO
@@ -202,6 +219,7 @@ def setupproblem(grafo, nedge, nvert, id_edge, arest,tipo_grafo):
     resultados = f"{tipo_grafo}_{nvert}_{nedge}" + "," + f"{nvert}" + "," + f"{best_integer}"+"," + f"{best_bound}"+"," + f"{elapsed_time}"
     with open("dados.txt", "a") as file:
         file.write(resultados+ "\n")
+#a variável U é para cada caminho? imagino q ss
 
 
 
