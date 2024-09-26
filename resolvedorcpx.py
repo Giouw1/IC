@@ -1,5 +1,4 @@
 
-
 import cplex
 from criadordegrafos import esparso
 from Leitor import faz_tudo
@@ -27,12 +26,11 @@ def setupproblem(grafo, nedge, nvert, id_edge, arest,tipo_grafo):
                              lb=[0] *nedge, ub=[1] * nedge,
                              types=['B'] * nedge,
                              names=['x_%d_%d_%d' % (k,i,j)  for i in range(nvert-1) for j in range(i+1,len(grafo[i])) if grafo[i][j] == 1 ]) for k in range(1,lim_cam+1)]
-    
     #arest é lista de arestas ordenada, poderia usar id edge para fazer a procura, mas precisaria de 4 iterações, evitei.
     s = [cpx.variables.add(obj=[0] *2*numedge_sep,
                             lb=[0] * 2*numedge_sep, ub=[1] * 2*numedge_sep,
                             types=['B'] * 2*numedge_sep,                            
-                            names=['s_%d_%s_%s' % (k,arest[i],arest[j]) for i in range(nedge) for j in range((nedge)) if j>i]+['s_%d_%s_%s' % (k,arest[j],arest[i]) for i in range(nedge) for j in range((nedge)) if j>i]) for k in range(1,lim_cam+1)]
+                            names=['s_%d_%s_%s' % (k,arest[i],arest[j]) for i in range(nedge) for j in range((nedge)) if j>i]+['s_%d_%s_%s' % (k,arest[j],arest[i]) for j in range(nedge) for i in range((nedge)) if j>i]) for k in range(1,lim_cam+1)]
   
 
     #Restrição 1
@@ -135,13 +133,13 @@ def setupproblem(grafo, nedge, nvert, id_edge, arest,tipo_grafo):
 
     #Restrição 9
     cpx.linear_constraints.add(
-        lin_expr = [cplex.SparsePair([a[k][i]] + [a[k][id_edge[i][j]+2*nvert+nedge]for j in range(i,len(grafo[i])) if id_edge[i][j] != -1] + [a[k][id_edge[j][i]+2*nvert] for j in range(i) if id_edge[j][i] != -1] + [u[k][i]], [1]+[2]*nedgesout_per_vert[i] + [2]*nedgesin_per_vert[i] + [-1])
+        lin_expr = [cplex.SparsePair([a[k][id_edge[i][j]+2*nvert+nedge]for j in range(i,len(grafo[i])) if id_edge[i][j] != -1] + [a[k][id_edge[j][i]+2*nvert] for j in range(i) if id_edge[j][i] != -1] + [u[k][i]], [1]*nedgesout_per_vert[i] + [1]*nedgesin_per_vert[i] + [-1])
         for k in range(lim_cam)  for i in range(nvert)],
         senses = ['L']*nvert*lim_cam,
         rhs=[0]*nvert*lim_cam)
     #Restrição 10
     cpx.linear_constraints.add(
-        lin_expr = [cplex.SparsePair([u[k][i]]+ [p[k]] + [a[k][i]] , [1,-(nvert-1),nvert-2])
+        lin_expr = [cplex.SparsePair([u[k][i]]+ [p[k]] + [a[k][i]] , [1,-(nvert-1),nvert-1])
         for k in range(lim_cam) for i in range(nvert)],
         senses = ['L']*lim_cam*nvert,
         rhs=[0]*lim_cam*nvert)
@@ -176,10 +174,10 @@ def setupproblem(grafo, nedge, nvert, id_edge, arest,tipo_grafo):
        senses = ['E']*lim_cam,
        rhs=[0]*lim_cam)
     #Restrição 15
-#Dúvida nessa última restrição: J pode ser menor que I? parece certo
+    #para todo par IJ, com IJ não tendo ordem nem nada
     cpx.linear_constraints.add(
 
-       lin_expr = [cplex.SparsePair([u[k][i]] + [u[k][j]] + [p[k]]+ [a[k][2*nvert +id_edge[i][j]]]+ [a[k][2*nvert+nedge+id_edge[i][j]]], [-1]+[1]+[2-nvert]+[nvert-3]+[nvert-1])
+       lin_expr = [cplex.SparsePair([u[k][i]] + [u[k][j]] + [p[k]]+ [a[k][2*nvert +id_edge[i][j]]]+ [a[k][2*nvert+nedge+id_edge[i][j]]], [-1]+[1]+[1-nvert]+[nvert-2 if j>i else nvert]+[nvert if j>i else nvert-2])
        for k in range(lim_cam) for i in range(nvert) for j in range(nvert) if id_edge[i][j] != -1],
        senses = ['L']*lim_cam*nedge*2,
        rhs=[0]*lim_cam*nedge*2)
@@ -205,13 +203,12 @@ def setupproblem(grafo, nedge, nvert, id_edge, arest,tipo_grafo):
     for var_name, var_value in zip(variable_names, variable_values):
         if var_value >= 0.9:
             ver_var+=[f"{var_name} = {var_value}"]
-    with open(r'C:\Users\Gio Faletti\Documents\GioPosEscola\ic\codigos\ProgVS\solucao.txt' , 'w') as f:
+    with open(r'solucao.txt' , 'w') as f:
         for i in ver_var:
             f.write(i+'\n')
 
 
 #ESCREVA O PATH DO SEU DADOS TXT PARA PODER OBTER OS DADOS DO GRAFO
-#tipo_grafo, nvert,ndege vão ser o nome
 #Integer quality é o GAP
     best_integer =  cpx.solution.get_objective_value()
     best_bound = cpx.solution.MIP.get_best_objective()
@@ -219,13 +216,10 @@ def setupproblem(grafo, nedge, nvert, id_edge, arest,tipo_grafo):
     resultados = f"{tipo_grafo}_{nvert}_{nedge}" + "," + f"{nvert}" + "," + f"{best_integer}"+"," + f"{best_bound}"+"," + f"{elapsed_time}"
     with open("dados.txt", "a") as file:
         file.write(resultados+ "\n")
-#a variável U é para cada caminho? imagino q ss
 
 
 
 
 
-#Escrever informações em um txt e separa-las por ;.
-#O que ele quer que pegue no sentido da relaxação linear? Meu modelo não tem essa solução
 #nome da instancia, relaxacao linear(tenho q ver como pegar), numero de nos, best integer, best bound, tempo total
 #c:\Users\Gio Faletti\Documents\GioPosEscola\ic\codigos\ProgVS\grafo.txt
