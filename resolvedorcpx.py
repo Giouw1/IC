@@ -12,9 +12,9 @@ def setupproblem(grafo, nedge, nvert, id_edge, arest,tipo_grafo):
 
     #id_edge ordena as arestas, se id_edge[a][b] é 5, a aresta ab é a quinta
     if tipo_grafo == "completo":
-        lim_cam = 2*nvert
+        lim_cam= min(lim_cam = 2*nvert, nedge)
     else:
-        lim_cam = 19*nvert
+        lim_cam = min(19*nvert, nedge)
     numedge_sep = ((nedge*(nedge-1))//2)#Quantidade total de arestas que satisfaz f>e
 
     p = cpx.variables.add(obj=[1] * lim_cam,
